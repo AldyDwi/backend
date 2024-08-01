@@ -18,11 +18,11 @@ trait HttpResponses
         return response()->json([
             'status' => 'error',
             'message' => $message,
-            'data' => $this->hasilError($data)
+            'data' => $this->hasil($data)
         ], $code);
     }
 
-    private function hasilError($data)
+    private function hasil($data)
     {
         if (is_null($data)) {
             return null;
