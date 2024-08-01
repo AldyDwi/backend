@@ -12,16 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('baju', function (Blueprint $table) {
-            $table->id();
+            $table->char('kode', 5)->primary();
             $table->string('nama');
-            $table->unsignedBigInteger('id_jenis');
-            $table->text('deskripsi');
+            $table->foreignId('id_jenis')->constrained('jenis_baju')->onDelete('cascade')->onUpdate('cascade');
             $table->integer('harga');
-            $table->string('gambar')->nullable(); // Gambar bisa kosong
+            $table->text('deskripsi')->nullable();
+            $table->string('gambar')->nullable();
             $table->timestamps();
-
-            // Menambahkan foreign key constraint
-            $table->foreign('id_jenis')->references('id')->on('jenis')->onDelete('cascade');
         });
     }
 

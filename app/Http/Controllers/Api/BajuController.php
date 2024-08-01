@@ -2,38 +2,38 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Baju;
-use App\Models\Jenis;
-use Illuminate\Http\Request;
-use App\Traits\HttpResponses;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BajuResource;
+use App\Models\Baju;
+use App\Models\JenisBaju;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 
 class BajuController extends Controller
 {
-    use HttpResponses;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        try {
-            $baju = Baju::with('jenis')->get()->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nama' => $item->nama,
-                    'jenis' => $item->jenis->nama, 
-                    'deskripsi' => $item->deskripsi,
-                    'harga' => $item->harga,
-                    'gambar' => $item->gambar,
-                ];
-            });
-            return $this->success($baju, 'Data baju berhasil diambil');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
-        }
+       
+        $baju = Baju::with('jenisBaju')->get();
+        
+        return response()->json([ 
+        'success' => true,
+        'message' => 'List Data Baju',
+        'data' => BajuResource::collection($baju)
+    ] );
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
     }
 
     /**
@@ -42,31 +42,45 @@ class BajuController extends Controller
     public function store(Request $request)
     {
         try {
-            $validate = Validator::make($request->all(), [
-                'nama' => 'required|string|max:255',
-                'id_jenis' => 'required|exists:jenis,id',
-                'deskripsi' => 'required|string',
-                'harga' => 'required|numeric',
-                'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            $validator = Validator::make($request->all(), [
+                'kode' => 'required|unique:baju,kode',
+                'nama' => 'required',
+                'id_jenis' => 'required',
+                'harga' => 'required',
+                'deskripsi' => 'required',
+                'gambar' => 'required|image|mimes:jpeg,jpg,jfif,png|max:2048'
             ]);
-
-            if ($validate->fails()) {
-                return $this->error('Validation error', 401, $validate->errors());
+        
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
             }
-
-            $data = $request->all();
-
-            if ($request->hasFile('gambar')) {
-                $path = $request->file('gambar')->store('public/gambar');
-                $data['gambar'] = basename($path);
-            }
-
-            $baju = Baju::create($data);
-            
-            return $this->success($baju, 'Data baju berhasil ditambahkan');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
+        
+            $image = $request->file('gambar');
+            $imageName = $request->kode . date('YmdHis') . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('/image', $imageName);
+        
+             Baju::create([
+                'kode' => $request->kode,
+                'nama' => $request->nama,
+                'id_jenis' => $request->id_jenis,
+                'harga' => $request->harga,
+                'deskripsi' => $request->deskripsi,
+                'gambar' => $imageName,
+            ]);
+            $baju = Baju::with('jenisBaju')->findOrFail($request->kode);
+            return response()->json([ 
+                'success' => true,
+                'message' => 'Data berhasil ditambahkan ',
+                'data' => new BajuResource($baju)
+            ] );
+        }  catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan yang tidak terduga!',
+                'error' => $e->getMessage(),
+            ], 500);
         }
+        
     }
 
     /**
@@ -74,20 +88,29 @@ class BajuController extends Controller
      */
     public function show(string $id)
     {
+        //
         try {
-            $baju = Baju::with('jenis')->findOrFail($id);
-            
-            return $this->success([
-                'id' => $baju->id,
-                'nama' => $baju->nama,
-                'jenis' => $baju->jenis->nama, 
-                'deskripsi' => $baju->deskripsi,
-                'harga' => $baju->harga,
-                'gambar' => $baju->gambar,
-            ], 'Data baju ditemukan');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
+            $baju = Baju::with('jenisBaju')->findOrFail($id);
+            return response()->json([ 
+                'success' => true,
+                'message' => 'Detail Data Baju! ',
+                'data' => new BajuResource($baju)
+            ] );
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak tersedia!',
+            ], 404);
         }
+            
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
     }
 
     /**
@@ -95,37 +118,61 @@ class BajuController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        try {
-            $validate = Validator::make($request->all(), [
-                'nama' => 'required|string|max:255',
-                'id_jenis' => 'required|exists:jenis,id',
-                'deskripsi' => 'required|string',
-                'harga' => 'required|numeric',
-                'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            ]);
-
-            if ($validate->fails()) {
-                return $this->error('Validation error', 401, $validate->errors());
-            }
-
-            $baju = Baju::findOrFail($id);
-            $data = $request->all();
-
-            if ($request->hasFile('gambar')) {
-                // Hapus gambar lama jika ada
-                if ($baju->gambar) {
-                    Storage::delete('public/gambar/' . $baju->gambar);
-                }
-                $path = $request->file('gambar')->store('public/gambar');
-                $data['gambar'] = basename($path);
-            }
-
-            $baju->update($data);
-            
-            return $this->success($baju, 'Data baju berhasil diupdate');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
+        //
+       try
+        { $validator = Validator::make($request->all(), [
+            'kode' => 'required',
+            'nama' => 'required',
+            'id_jenis' => 'required',
+            'harga' => 'required',
+            'deskripsi' => 'required',
+            'gambar' => 'required|image|mimes:jpeg,jpg,jfif,png|max:2048'
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
+
+        $baju = Baju::with('jenisBaju')->findOrFail($id);
+        if ($request->hasFile('gambar')){
+            $image = $request->file('gambar');
+            $imageName = $request->kode . date('YmdHis') . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('/image', $imageName);
+                    if (file_exists(public_path('assets/image/' . basename($baju->gambar)))) {
+                        Storage::disk('local')->delete('image/' . basename($baju->gambar));
+                    } 
+                    $baju->update([
+                    'kode' => $request->kode,
+                    'nama' => $request->nama,
+                    'id_jenis' => $request->id_jenis,
+                    'harga' => $request->harga,
+                    'deskripsi' => $request->deskripsi,
+                    'gambar' => $imageName,
+                    ]);
+            }else{
+                $baju->update([
+                'kode' => $request->kode,
+                'nama' => $request->nama,
+                'id_jenis' => $request->id_jenis,
+                'harga' => $request->harga,
+                'deskripsi' => $request->deskripsi,
+                ]);   
+            }
+            return response()->json([ 
+                'success' => true,
+                'message' => 'Data Berhasil diupdate ',
+                'data' => new BajuResource(Baju::with('jenisBaju')->findOrFail($id))
+            ] );
+        }
+            catch(\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menambahkan data jenis baju!',
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+
+
     }
 
     /**
@@ -133,19 +180,21 @@ class BajuController extends Controller
      */
     public function destroy(string $id)
     {
-        try {
-            $baju = Baju::findOrFail($id);
-
-            // Hapus gambar jika ada
-            if ($baju->gambar) {
-                Storage::delete('public/gambar/' . $baju->gambar);
-            }
-
-            $baju->delete();
-            
-            return $this->success([], 'Data baju berhasil dihapus');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
-        }
+           
+      try { $baju = Baju::with('jenisBaju')->findOrFail($id);
+        Storage::disk('local')->delete('image/' . basename($baju->gambar));
+        $baju->delete();
+        return response()->json([ 
+            'success' => true,
+            'message' => 'Data berhasil dihapus ',
+            'data' => new BajuResource($baju)
+        ] );
+        
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Data tidak tersedia!',
+        ], 404);
+    }
     }
 }

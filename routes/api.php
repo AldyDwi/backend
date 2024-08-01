@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Controllers\Api\BajuController;
-use App\Http\Controllers\Api\JenisController;
+use App\Http\Controllers\Api\JenisBajuController;
 
 // Register
 Route::post('register',[ApiController::class, 'register']);
@@ -22,7 +22,7 @@ Route::group([
     Route::get('logout',[ApiController::class, 'logout']);
 
     // CRUD Jenis
-    Route::apiResource('jenis', JenisController::class);
+    Route::apiResource('jenis', JenisBajuController::class);
 
     // CRUD Baju
     Route::apiResource('baju', BajuController::class);
