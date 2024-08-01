@@ -78,9 +78,9 @@ class ApiController extends Controller
         return $this->success($userData, 'Informasi Profile');
     }
 
-    public function logout() {
+    public function logout(Request $request) {
         try{
-            auth()->user()->tokens()->delete();
+            $request->user()->currentAccessToken()->delete();
             return $this->success([], 'User logged out');
         } catch (\Throwable $th) {
             return $this->error($th->getMessage(), 500);
