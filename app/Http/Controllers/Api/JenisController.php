@@ -2,27 +2,29 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Jenis;
-use Illuminate\Http\Request;
-use App\Traits\HttpResponses;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\JenisResource;
+use App\Models\JenisBaju;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class JenisController extends Controller
+class JenisBajuController extends Controller
 {
-    use HttpResponses;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        try {
-            $jenis = Jenis::all();
-            
-            return $this->success($jenis, 'Data jenis berhasil diambil');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
-        }
+        $jenisBaju = JenisBaju::all();
+        return new JenisResource(true, 'List Data Jenis Baju',$jenisBaju);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
     }
 
     /**
@@ -30,36 +32,45 @@ class JenisController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            $validate = Validator::make($request->all(), [
-                'nama' => 'required|string|max:255',
-            ]);
+        //
+        $validator = Validator::make($request->all(), [
+            'nama'   => 'required',
+        ]);
 
-            if ($validate->fails()) {
-                return $this->error('Validation error', 401, $validate->errors());
-            }
-
-            $jenis = Jenis::create($request->all());
-            
-            return $this->success($jenis, 'Data jenis berhasil ditambahkan');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
-    }
 
+        $jenis= JenisBaju::create([
+            'nama' => $request->nama,
+        ]);
+        return new JenisResource(true, 'Data Jenis Baju Berhasil Ditambahkan!',$jenis);
+    }
 
     /**
      * Display the specified resource.
      */
     public function show(string $id)
     {
+        //
         try {
-            $jenis = Jenis::findOrFail($id);
-            
-            return $this->success($jenis, 'Data jenis ditemukan');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
+            $jenisBaju = JenisBaju::findOrFail($id);
+            return new JenisResource(true, 'Detail Data Jenis Baju!', $jenisBaju);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak tersedia!',
+            ], 404);
         }
+            }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+        
     }
 
     /**
@@ -67,22 +78,21 @@ class JenisController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        try {
-            $validate = Validator::make($request->all(), [
-                'nama' => 'required|string|max:255',
-            ]);
+        //
+        $validator = Validator::make($request->all(), [
+            'nama'   => 'required',
+        ]);
 
-            if ($validate->fails()) {
-                return $this->error('Validation error', 401, $validate->errors());
-            }
-
-            $jenis = Jenis::findOrFail($id);
-            $jenis->update($request->all());
-            
-            return $this->success($jenis, 'Data jenis berhasil diupdate');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
+        
+        $jenisBaju = JenisBaju::findorfail($id);
+        $jenisBaju->update([
+            'nama' => $request->nama,
+        ]);
+        return new JenisResource(true, 'Data Post Berhasil Diubah!',$jenisBaju);
+
     }
 
     /**
@@ -90,13 +100,10 @@ class JenisController extends Controller
      */
     public function destroy(string $id)
     {
-        try {
-            $jenis = Jenis::findOrFail($id);
-            $jenis->delete();
+        //
+        $jenisBaju = JenisBaju::findorfail($id);
+        $jenisBaju->delete();
+        return new JenisResource(true, 'Data Post Berhasil Dihapus!',$jenisBaju);
 
-            return $this->success([], 'Data jenis berhasil dihapus');
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), 500);
-        }
     }
 }
