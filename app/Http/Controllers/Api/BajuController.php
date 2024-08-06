@@ -1,18 +1,19 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BajuResource;
 use App\Models\Baju;
-use App\Models\JenisBaju;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HttpResponses;
 
 
 class BajuController extends Controller
 {
+    use HttpResponses;
+
     /**
      * Display a listing of the resource.
      */
@@ -20,12 +21,10 @@ class BajuController extends Controller
     {
        
         $baju = Baju::with('jenisBaju')->get();
-        
-        return response()->json([ 
-        'success' => true,
-        'message' => 'List Data Baju',
-        'data' => BajuResource::collection($baju)
-    ] );
+        return $this->success(BajuResource::collection($baju),'List Data Jenis Baju');
+
+
+
     }
 
     /**
@@ -68,17 +67,11 @@ class BajuController extends Controller
                 'gambar' => $imageName,
             ]);
             $baju = Baju::with('jenisBaju')->findOrFail($request->kode);
-            return response()->json([ 
-                'success' => true,
-                'message' => 'Data berhasil ditambahkan ',
-                'data' => new BajuResource($baju)
-            ] );
+            return $this->success(new BajuResource($baju),'Data Jenis Baju Berhasil Ditambahkan!');
+
         }  catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan yang tidak terduga!',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->error('Terjadi kesalahan yang tidak terduga!', 500);
+
         }
         
     }
@@ -91,16 +84,12 @@ class BajuController extends Controller
         //
         try {
             $baju = Baju::with('jenisBaju')->findOrFail($id);
-            return response()->json([ 
-                'success' => true,
-                'message' => 'Detail Data Baju! ',
-                'data' => new BajuResource($baju)
-            ] );
+            return $this->success(new BajuResource($baju),'List Data Jenis Baju');
+
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak tersedia!',
-            ], 404);
+            return $this->error('Data tidak tersedia!', 404);
+
+            
         }
             
     }
@@ -158,18 +147,11 @@ class BajuController extends Controller
                 'deskripsi' => $request->deskripsi,
                 ]);   
             }
-            return response()->json([ 
-                'success' => true,
-                'message' => 'Data Berhasil diupdate ',
-                'data' => new BajuResource(Baju::with('jenisBaju')->findOrFail($id))
-            ] );
+            return $this->success(new BajuResource($baju),'Data berhasil diperbarui!');
+
         }
             catch(\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan saat menambahkan data jenis baju!',
-                    'error' => $e->getMessage(),
-                ], 500);
+                return $this->error('Terjadi kesalahan yang tidak terduga!', 500);
             }
 
 
@@ -184,17 +166,12 @@ class BajuController extends Controller
       try { $baju = Baju::with('jenisBaju')->findOrFail($id);
         Storage::disk('local')->delete('image/' . basename($baju->gambar));
         $baju->delete();
-        return response()->json([ 
-            'success' => true,
-            'message' => 'Data berhasil dihapus ',
-            'data' => new BajuResource($baju)
-        ] );
+        return $this->success(new BajuResource($baju),'Data berhasil terhapus!');
+
         
     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Data tidak tersedia!',
-        ], 404);
+        return $this->error('Data tidak tersedia!', 404);
+
     }
     }
 }

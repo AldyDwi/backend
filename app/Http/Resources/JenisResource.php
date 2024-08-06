@@ -13,23 +13,17 @@ class JenisResource extends JsonResource
      * @return array<string, mixed>
      */
 
-     public $status;
-     public $message;
-     public $resource;
 
-     public function __construct($status, $message, $resource)
+     public function toArray(Request $request): array
      {
-         parent::__construct($resource);
-         $this->status  = $status;
-         $this->message = $message;
+         return  [
+             
+                 'id' => $this->id,
+                 'nama' => $this->nama,
+                 'created_at' => $this->created_at,
+                 'updated_at' => $this->updated_at,
+                 
+             
+         ];
      }
-
-    public function toArray(Request $request): array
-    {
-        return [
-            'success'   => $this->status,
-            'message'   => $this->message,
-            'data'      => $this->resource
-        ];
-    }
 }

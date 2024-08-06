@@ -11,7 +11,9 @@ class JenisBaju extends Model
 
     protected $table = 'jenis_baju';
     protected $primarykey = 'id';
+    public $incrementing = false;
     protected $fillable = [
+        'id',
         'nama'
     ];
 
