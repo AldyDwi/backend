@@ -1,22 +1,26 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
 use App\Http\Controllers\Controller;
 use App\Http\Resources\JenisResource;
 use App\Models\JenisBaju;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HttpResponses;
+
 
 class JenisBajuController extends Controller
 {
+    use HttpResponses;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $jenisBaju = JenisBaju::all();
-        return new JenisResource(true, 'List Data Jenis Baju',$jenisBaju);
+        return $this->success(JenisResource::collection($jenisBaju),'List Data Jenis Baju');
+
+        // return new JenisResource(true, 'List Data Jenis Baju',$jenisBaju);
     }
 
     /**
@@ -41,10 +45,14 @@ class JenisBajuController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        $id = JenisBaju::max('id') + 1;
+
         $jenis= JenisBaju::create([
+            'id' => $id,
             'nama' => $request->nama,
         ]);
-        return new JenisResource(true, 'Data Jenis Baju Berhasil Ditambahkan!',$jenis);
+        return $this->success(new JenisResource($jenis),'Data Jenis Baju Berhasil Ditambahkan!');
+        // return new JenisResource($jenis);
     }
 
     /**
@@ -55,12 +63,9 @@ class JenisBajuController extends Controller
         //
         try {
             $jenisBaju = JenisBaju::findOrFail($id);
-            return new JenisResource(true, 'Detail Data Jenis Baju!', $jenisBaju);
+            return $this->success(new JenisResource($jenisBaju),'List Data Jenis Baju');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak tersedia!',
-            ], 404);
+            return $this->error('Data tidak tersedia!', 404);
         }
             }
 
@@ -91,7 +96,8 @@ class JenisBajuController extends Controller
         $jenisBaju->update([
             'nama' => $request->nama,
         ]);
-        return new JenisResource(true, 'Data Post Berhasil Diubah!',$jenisBaju);
+        return $this->success(new JenisResource($jenisBaju),'Data berhasil diperbarui!');
+
 
     }
 
@@ -103,7 +109,8 @@ class JenisBajuController extends Controller
         //
         $jenisBaju = JenisBaju::findorfail($id);
         $jenisBaju->delete();
-        return new JenisResource(true, 'Data Post Berhasil Dihapus!',$jenisBaju);
+        return $this->success(new JenisResource($jenisBaju),'Data berhasil terhapus!');
+
 
     }
 }
