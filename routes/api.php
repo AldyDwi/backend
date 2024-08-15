@@ -25,6 +25,9 @@ Route::group([
 
     // CRUD Jenis
     Route::apiResource('jenis', JenisBajuController::class);
+
+    // CRUD Baju
+    Route::apiResource('baju', BajuController::class);
 });
 
 Route::group([
@@ -35,9 +38,6 @@ Route::group([
 
     // Logout
     Route::get('customer/logout',[AuthController::class, 'logout']);
-
-    // CRUD Baju
-    Route::apiResource('baju', BajuController::class);
 });
 
 
