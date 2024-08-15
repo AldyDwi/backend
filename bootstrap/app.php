@@ -13,13 +13,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // $routeMiddleware = [
-        //     'role' => \App\Http\Middleware\CheckRole::class,
-        // ];
-
-        // return $routeMiddleware;
-        // $middleware->append(CheckRole::class);
-
         $middleware->alias([
             'role' => CheckRole::class
         ]);

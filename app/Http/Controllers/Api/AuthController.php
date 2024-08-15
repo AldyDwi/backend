@@ -30,17 +30,19 @@ class AuthController extends Controller
                 return $this->error('Validation error', 401, $validateUser->errors());
             }
 
-            $id = User::max('id') + 1;
+            // $id = User::max('id') + 1;
 
             $user = User::create([
-                'id' => $id, 
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => $request->password,
             ]);
 
+            // $userId = $id;
+            $userId = $user->id;
+
             $roleUser = RoleUser::create([
-                'user_id' => $id,
+                'user_id' => $userId,
                 'role_id' => 2, 
             ]);
 
@@ -84,7 +86,25 @@ class AuthController extends Controller
     }
 
     public function profile() {
-        $userData = auth()->user();
+        $user = auth()->user();
+
+        $roles = $user->roles()->get()->map(function($role) {
+            return [
+                'id' => $role->pivot->role_id,
+                'role' => $role->name
+            ];
+        });
+
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'level' => $roles,
+            'email_verified_at' => $user->email_verified_at,
+            'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+        ];
+
         return $this->success($userData, 'Informasi Profile');
     }
 

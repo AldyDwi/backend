@@ -25,9 +25,6 @@ Route::group([
 
     // CRUD Jenis
     Route::apiResource('jenis', JenisBajuController::class);
-
-    // CRUD Baju
-    Route::apiResource('api-baju', BajuController::class);
 });
 
 Route::group([
